@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"time"
 )
@@ -44,7 +45,6 @@ func reserveTimes(startHr, totalHrs int) (int, int) {
 
 	if startHr == -1 {
 		startHr = getRandomNumInRage(0, 23)
-		fmt.Println("Start hour chosen: ", startHr)
 	}
 
 	endHr := (startHr + totalHrs) % 24
@@ -111,7 +111,8 @@ func generateDayEvent(dayLayout *[288]FiveMinuteActivity, startHr int, endHr int
 			}
 		}
 
-		interval.caloriesBurned = float64(intervalSteps) * caloriesPerStep
+		caloriesBurned := float64(intervalSteps) * caloriesPerStep
+		interval.caloriesBurned = math.Round(caloriesBurned*100) / 100
 		interval.description = description
 
 		index := i % 288
@@ -176,7 +177,8 @@ func generateWorkDay(dayLayout *[288]FiveMinuteActivity, startHr int, endHr int,
 		if standing || intervalStand {
 			stepsTaken := getRandomNumInRage(stepRange[0], stepRange[1]) / 12
 			interval.totalSteps = stepsTaken
-			interval.caloriesBurned = float64(stepsTaken) * caloriesPerStep
+			caloriesBurned := float64(stepsTaken) * caloriesPerStep
+			interval.caloriesBurned = math.Round(caloriesBurned*100) / 100
 
 			if startOfHour {
 				interval.standHrs = 1
