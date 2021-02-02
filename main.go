@@ -198,6 +198,26 @@ func getRandomNumInRage(min, max int) int {
 
 func main() {
 
+	var fiveDaysOfActivity [5][288]FiveMinuteActivity
+
+	for i := 0; i < 5; i++ {
+		oneDay := ActivityGenerator()
+		fiveDaysOfActivity[i] = oneDay
+	}
+
+	randomDay := getRandomNumInRage(0, 4)
+	fmt.Println("Total days generated: ", len(fiveDaysOfActivity))
+	fmt.Println("Picked day: ", randomDay)
+
+	// Temporary: Displaying results to be inspected
+	for i, v := range fiveDaysOfActivity[randomDay] {
+		fmt.Printf("%d : %v,\n", i, v)
+	}
+
+}
+
+func ActivityGenerator() [288]FiveMinuteActivity {
+
 	var events [288]FiveMinuteActivity
 
 	sleepActivity := Activity{}
@@ -234,9 +254,5 @@ func main() {
 	relaxActivity.config.Configure(nextStartHr, relaxTime, relax, -1, "Relax")
 	relaxActivity.GenerateEventIntervals(&events)
 
-	// Temporary: Displaying results to be inspected
-	for i, v := range events {
-		fmt.Printf("%d : %v,\n", i, v)
-	}
-
+	return events
 }
