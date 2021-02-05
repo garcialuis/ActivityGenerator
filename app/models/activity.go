@@ -95,16 +95,16 @@ func generateDayEvent(dayLayout *[288]FiveMinuteActivity, startHr int, endHr int
 		}
 
 		if exercising || intervalStand {
-			interval.totalSteps = intervalSteps
+			interval.TotalSteps = intervalSteps
 
 			if startOfHour {
-				interval.standHrs = 1
+				interval.StandHrs = 1
 			}
 		}
 
 		caloriesBurned := float64(intervalSteps) * caloriesPerStep
-		interval.caloriesBurned = math.Round(caloriesBurned*100) / 100
-		interval.description = description
+		interval.CaloriesBurned = math.Round(caloriesBurned*100) / 100
+		interval.Description = description
 
 		index := i % 288
 		dayLayout[index] = interval
@@ -118,7 +118,7 @@ func generateSleepEvent(dayLayout *[288]FiveMinuteActivity, startHr int, endHr i
 	startIndex := startHr * 12
 	endIndex := startIndex + fiveMinIntervals
 
-	interval := FiveMinuteActivity{description: "sleeping"}
+	interval := FiveMinuteActivity{Description: "sleeping"}
 
 	for i := startIndex; i < endIndex; i++ {
 		index := i % 288
@@ -156,7 +156,7 @@ func generateWorkDay(dayLayout *[288]FiveMinuteActivity, startHr int, endHr int,
 
 	for i := startIndex; i < endIndex; i++ {
 
-		interval := FiveMinuteActivity{description: "working"}
+		interval := FiveMinuteActivity{Description: "working"}
 		intervalStand := (RandomNumInRage(0, 1) == 1)
 
 		startOfHour := (i%12 == 0)
@@ -167,12 +167,12 @@ func generateWorkDay(dayLayout *[288]FiveMinuteActivity, startHr int, endHr int,
 
 		if standing || intervalStand {
 			stepsTaken := RandomNumInRage(stepRange[0], stepRange[1]) / 12
-			interval.totalSteps = stepsTaken
+			interval.TotalSteps = stepsTaken
 			caloriesBurned := float64(stepsTaken) * caloriesPerStep
-			interval.caloriesBurned = math.Round(caloriesBurned*100) / 100
+			interval.CaloriesBurned = math.Round(caloriesBurned*100) / 100
 
 			if startOfHour {
-				interval.standHrs = 1
+				interval.StandHrs = 1
 			}
 		}
 

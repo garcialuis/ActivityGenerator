@@ -8,7 +8,7 @@ import (
 )
 
 type Controller struct {
-	fiveDaysOfActivity [5][288]models.FiveMinuteActivity
+	FiveDaysOfActivity [5][288]models.FiveMinuteActivity
 }
 
 func (controller *Controller) GenerateDayActivities() {
@@ -29,5 +29,5 @@ func (controller *Controller) GenerateDayActivities() {
 		fmt.Printf("%d : %v,\n", i, v)
 	}
 
-	controller.fiveDaysOfActivity = fiveDaysOfActivity
+	controller.FiveDaysOfActivity = fiveDaysOfActivity
 }
