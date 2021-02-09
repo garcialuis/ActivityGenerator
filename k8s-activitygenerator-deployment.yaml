@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: activitygenerator
+  labels:
+    app: activitygenerator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: activitygenerator
+  template:
+    metadata:
+      labels:
+        app: activitygenerator
+        tier: service
+    spec:
+      containers:
+      - name: activitygenerator
+        image: activitygenerator:0.0.0
+        args:
+        - /bin/sh
+        - -c
+        - touch /tmp/healthy
+        env:
+        - name: DB_POSTGRES_DRIVER
+          value: "postgres"
+        - name: DB_USER
+          value: ""
+        - name: DB_PASSWORD
+          value: ""
+        - name: DB_HOST
+          value: ""
+        - name: DB_NAME
+          value: ""
+        - name: DB_PORT
+          value: ""
+        - name: BROKER_ADDR
+          value: "amqp://guest:guest@rabbitmq:5672/"
+        resources:
+          requests:
+            memory: 64Mi
+            cpu: 250m
+          limits:
+            memory: 128Mi
+            cpu: 250m
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - cat
+            - /tmp/healthy
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        
