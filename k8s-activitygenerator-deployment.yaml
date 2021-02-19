@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: activitygenerator
-        image: activitygenerator:0.0.0
+        image: garcialuiz/activitygenerator:0.0.1
         args:
         - /bin/sh
         - -c
