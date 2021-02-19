@@ -1,0 +1,103 @@
+# Golang CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-go/ for more details
+version: 2.1
+
+executors:
+  docker-publisher:
+    environment:
+      IMAGE_NAME: garcialuiz/activitygenerator
+    docker:
+      - image: circleci/buildpack-deps:stretch
+
+jobs:
+  test:
+    docker:
+      # specify the version
+      - image: cimg/go:1.14
+
+      # Test database service:
+      - image: circleci/postgres:9.6.5-alpine-ram
+
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/postgres:9.4
+
+    #### TEMPLATE_NOTE: go expects specific checkout path representing url
+    #### expecting it in the form of
+    ####   /go/src/github.com/circleci/go-tool
+    ####   /go/src/bitbucket.org/circleci/go-tool
+    working_directory: ~/go/src/github.com/garcialuis/ActivityGenerator
+    steps:
+      - checkout
+
+      # specify any bash command here prefixed with `run: `
+      - run: go get -v -t -d ./...
+      - run: go test -v ./...
+  build:
+    executor: docker-publisher
+    working_directory: ~/go/src/github.com/garcialuis/ActivityGenerator
+    steps:
+      - checkout
+      - setup_remote_docker
+
+      - run: 
+          name: Build Docker image
+          command: docker build -t $IMAGE_NAME:latest .
+      - run:
+          name: Archive Docker image
+          command: docker save -o image.tar $IMAGE_NAME
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./image.tar
+  publish-tagged:
+    executor: docker-publisher
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - setup_remote_docker
+      - run:
+          name: Load Docker image from archive
+          command: docker load -i /tmp/workspace/image.tar
+      - run: 
+          name: Publish Docker image to Docker Hub
+          command: | 
+            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin 
+            IMAGE_TAG=${CIRCLE_TAG/v/''}
+            docker tag $IMAGE_NAME:latest $IMAGE_NAME:$IMAGE_TAG
+            docker push $IMAGE_NAME:latest
+            docker push $IMAGE_NAME:$IMAGE_TAG
+
+      - run: echo "Done pushing image to Docker Hub"
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test
+  test-build-tag:
+    jobs:
+      - test:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+      - build:
+          requires:
+            - test
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+      - publish-tagged:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/

@@ -43,51 +43,25 @@ func rabbitMQProducer(activityData [5][288]models.FiveMinuteActivity, originIDs 
 	)
 	failOnError(err, "Failed to declare a queue")
 
-	msgCount := 0
-
 	// Get signal for finish
 	doneCh := make(chan struct{})
 
 	go func() {
 
+		// BackTrack data 3 months back, subtract about 90 days from now:
+		threeMonthsAgo := time.Now().Unix() - 7776000
+		backTrackData(&q, ch, threeMonthsAgo, originIDs, activityData)
+
 		for {
 
 			now := time.Now()
-
-			currentHour := now.Hour()
-			currentMinute := now.Minute()
-			currentInterval := (currentHour * 12) + (currentMinute / 5)
+			currentInterval := getCurrentInterval(now)
 
 			fmt.Println("Current Interval: ", currentInterval)
 
 			for _, v := range originIDs {
-
-				activityStreamID := activityStream[v]
-				intervalData := activityData[activityStreamID][currentInterval]
-
-				intervalData.OriginID = uint64(v)
-				intervalData.Epochtime = now.Unix()
-
-				fmt.Printf("originID: %d activity: %s\n", v, intervalData.Description)
-
-				newActivityMsg, err := json.Marshal(intervalData)
-				failOnError(err, "Unable to marshall activity message")
-
-				msgCount++
-				body := fmt.Sprintf("Hello RabbitMQ message %v", msgCount)
-
-				err = ch.Publish(
-					"",     // exchange
-					q.Name, // routing key
-					false,  // mandatory
-					false,  // immediate
-					amqp.Publishing{
-						ContentType: "application/json",
-						Body:        newActivityMsg,
-					})
-				log.Printf(" [x] Sent %s", body)
-				failOnError(err, "Failed to publish a message")
-
+				unixtime := now.Unix()
+				publishMessageToQueue(&q, ch, v, currentInterval, unixtime, activityData)
 			}
 
 			time.Sleep(5 * time.Minute)
@@ -95,6 +69,57 @@ func rabbitMQProducer(activityData [5][288]models.FiveMinuteActivity, originIDs 
 	}()
 
 	<-doneCh
+}
+
+func backTrackData(q *amqp.Queue, ch *amqp.Channel, unixtime int64, originIDs []int, activityData [5][288]models.FiveMinuteActivity) {
+
+	timenow := time.Now().Unix()
+
+	for unixtime < timenow {
+
+		time := time.Unix(int64(unixtime), 0)
+		currentInterval := getCurrentInterval(time)
+
+		for _, v := range originIDs {
+			publishMessageToQueue(q, ch, v, currentInterval, unixtime, activityData)
+		}
+
+		unixtime += 300 //add 5 minutes
+	}
+}
+
+func publishMessageToQueue(q *amqp.Queue, ch *amqp.Channel, origin int, interval int, unixtime int64, activityData [5][288]models.FiveMinuteActivity) {
+
+	activityStreamID := activityStream[origin]
+	intervalData := activityData[activityStreamID][interval]
+
+	intervalData.OriginID = uint64(origin)
+	intervalData.Epochtime = unixtime
+
+	fmt.Printf("originID: %d activity: %s\n", origin, intervalData.Description)
+	newActivityMsg, err := json.Marshal(intervalData)
+	failOnError(err, "Unable to marshall activity message")
+
+	err = ch.Publish(
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        newActivityMsg,
+		})
+
+	failOnError(err, "Failed to publish a message")
+}
+
+func getCurrentInterval(now time.Time) int {
+
+	currentHour := now.Hour()
+	currentMinute := now.Minute()
+	currentInterval := (currentHour * 12) + (currentMinute / 5)
+
+	return currentInterval
 }
 
 func originToActivityMapper(originIDs []int) {

@@ -15,8 +15,8 @@ func Run() {
 	generatorController := controllers.Controller{}
 	generatorController.GenerateDayActivities()
 
-	// Get list of active users
-	originIDs := []int{10080, 10209, 10038}
+	// Get list of active users, there'll be 3 demo users
+	originIDs := []int{1, 2, 3}
 	wg.Add(1)
 	// Upstream activity for each user based on their chosen activity day
 	go func() {
